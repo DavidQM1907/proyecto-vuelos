@@ -1,7 +1,6 @@
 const express = require("express");
 const app = express();
 
-// Monday challenge viene a veces como JSON y a veces como texto plano
 app.use(express.text({ type: "*/*" }));
 app.use(express.json());
 
@@ -10,25 +9,38 @@ app.post("/webhook", (req, res) => {
   console.log(req.body);
 
   let challenge = null;
+  let body = req.body;
 
-  // Caso 1: JSON estándar
-  if (req.body && typeof req.body === "object" && req.body.challenge) {
-    challenge = req.body.challenge;
+  // CASO 3: JSON stringificado
+  if (typeof body === "string" && body.startsWith("{") && body.endsWith("}")) {
+    try {
+      const parsed = JSON.parse(body);
+      if (parsed.challenge) {
+        body = parsed;
+      }
+    } catch (err) {
+      console.log("Error parseando JSON stringificado.");
+    }
   }
 
-  // Caso 2: texto plano: "challenge=xxxx"
-  if (typeof req.body === "string" && req.body.startsWith("challenge=")) {
-    challenge = req.body.split("=")[1];
+  // CASO 1: JSON normal
+  if (typeof body === "object" && body.challenge) {
+    challenge = body.challenge;
   }
 
-  // Responder challenge de Monday
+  // CASO 2: Texto plano tipo "challenge=xxxx"
+  if (typeof body === "string" && body.startsWith("challenge=")) {
+    challenge = body.split("=")[1];
+  }
+
+  // RESPONDER CHALLENGE
   if (challenge) {
     console.log("Devolviendo challenge:", challenge);
     res.setHeader("Content-Type", "text/plain");
     return res.status(200).send(challenge);
   }
 
-  // Webhook regular
+  // Webhook normal
   res.status(200).send("OK");
 });
 
