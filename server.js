@@ -1,50 +1,42 @@
 const express = require("express");
-const bodyParser = require("body-parser");
 const app = express();
 
-// Monday puede mandar JSON o texto plano.
-// Aceptamos AMBOS formatos sin romper nada.
-app.use(bodyParser.json());
-app.use(bodyParser.text({ type: "*/*" }));
+// Monday challenge viene a veces como JSON y a veces como texto plano
+app.use(express.text({ type: "*/*" }));
+app.use(express.json());
 
 app.post("/webhook", (req, res) => {
-  console.log("Webhook recibido:");
+  console.log("---- Webhook recibido ----");
   console.log(req.body);
 
-  // Cuando Monday valida el webhook manda:
-  // { challenge: "xxxxx" }
-  //
-  // PERO A VECES lo manda como texto plano:
-  // challenge=xxxxx
-  //
-  // Debemos manejar AMBAS formas.
-  
-  let body = req.body;
+  let challenge = null;
 
-  // Caso 1: JSON normal (lo más común)
-  if (typeof body === "object" && body.challenge) {
-    console.log("Responding challenge (JSON)...");
-    res.setHeader("Content-Type", "text/plain");
-    return res.status(200).send(body.challenge);
+  // Caso 1: JSON estándar
+  if (req.body && typeof req.body === "object" && req.body.challenge) {
+    challenge = req.body.challenge;
   }
 
-  // Caso 2: texto plano tipo: "challenge=xxxxx"
-  if (typeof body === "string" && body.startsWith("challenge=")) {
-    const challengeValue = body.split("=")[1];
-    console.log("Responding challenge (TEXT)...");
-    res.setHeader("Content-Type", "text/plain");
-    return res.status(200).send(challengeValue);
+  // Caso 2: texto plano: "challenge=xxxx"
+  if (typeof req.body === "string" && req.body.startsWith("challenge=")) {
+    challenge = req.body.split("=")[1];
   }
 
-  // Si no es challenge, es un webhook normal
+  // Responder challenge de Monday
+  if (challenge) {
+    console.log("Devolviendo challenge:", challenge);
+    res.setHeader("Content-Type", "text/plain");
+    return res.status(200).send(challenge);
+  }
+
+  // Webhook regular
   res.status(200).send("OK");
 });
 
 app.get("/", (req, res) => {
-  res.send("Servidor funcionando correctamente en Render.");
+  res.send("Servidor Monday Webhook funcionando en Render.");
 });
 
 const port = process.env.PORT || 3000;
 app.listen(port, () => {
-  console.log("Servidor corriendo en puerto:", port);
+  console.log("Servidor activo en puerto:", port);
 });
