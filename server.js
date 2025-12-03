@@ -3,12 +3,17 @@ const app = express();
 
 app.use(express.json());
 
-// Ruta principal para Monday.com
+// Ruta para Webhooks de Monday.com
 app.post("/webhook", (req, res) => {
   console.log("Webhook recibido:");
   console.log(req.body);
 
-  // Monday.com siempre requiere un 200 OK
+  // Monday Challenge: si viene un challenge, respondemos con él
+  if (req.body.challenge) {
+    return res.status(200).send(req.body.challenge);
+  }
+
+  // Respuesta normal a webhooks
   res.status(200).send("OK");
 });
 
