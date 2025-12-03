@@ -8,12 +8,13 @@ app.post("/webhook", (req, res) => {
   console.log("Webhook recibido:");
   console.log(req.body);
 
-  // Monday Challenge: si viene un challenge, respondemos con él
+  // Monday Challenge: si viene "challenge", devolverlo tal cual
   if (req.body.challenge) {
+    console.log("Responding challenge back...");
     return res.status(200).send(req.body.challenge);
   }
 
-  // Respuesta normal a webhooks
+  // Respuesta normal a otros webhooks
   res.status(200).send("OK");
 });
 
